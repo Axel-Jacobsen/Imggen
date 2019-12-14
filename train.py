@@ -1,10 +1,10 @@
 #! /usr/bin/env python3
 
-import numpy as np
 import torch
+import numpy as np
+import matplotlib.pyplot as plt
 
 from PIL import Image
-
 
 from model import Imggen
 
@@ -38,7 +38,19 @@ class TrainV0(object):
         with torch.no_grad():
             out = self.model(noise)
         img = self.make_img(out)
-        img.show()
+        return img
+
+    def plot_samples(self):
+        w=10
+        h=10
+        fig=plt.figure(figsize=(8, 8))
+        columns = 4
+        rows = 5
+        for i in range(1, columns*rows +1):
+            img = train.gen_img()
+            fig.add_subplot(rows, columns, i)
+            plt.imshow(img)
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -47,5 +59,5 @@ if __name__ == '__main__':
 
     mdl = Imggen(in_features=16, width=16, height=16)
     train = TrainV0(mdl, device=device)
-    train.gen_img()
+    train.plot_samples()
 
