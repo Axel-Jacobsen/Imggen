@@ -17,8 +17,8 @@ class Imggen(nn.Module):
         self.F4 = nn.Linear(512, width * height * 3)
 
     def forward(self, x):
-        x = F.relu(self.F1(x))
-        x = F.relu(self.F2(x))
-        x = F.relu(self.F3(x))
+        x = F.leaky_relu(self.F1(x))
+        x = F.leaky_relu(self.F2(x))
+        x = F.leaky_relu(self.F3(x))
         return F.relu(self.F4(x))
 
