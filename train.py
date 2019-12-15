@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 
+import math
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,7 +17,7 @@ class TrainV0(object):
     GAMMA = 0.99
     TARGET_UPDATE = 100
     REWARD_CONST = 1
-    lr = 1e-1
+    lr = 1e-3
 
     def __init__(self, model: Imggen, device: str, pth=None):
         self.model = model
@@ -34,12 +35,13 @@ class TrainV0(object):
 
     def train(self):
         ims = []
-        for i in range(1000):
-            noise = self.static_noise
-            model_out = self.model(noise)
+        loops = 100
+        for i in range(10 * loops):
+            model_out = self.model(self.static_noise)
 
             # Give constant negative reward
-            rewards = torch.FloatTensor([self.REWARD_CONST])
+            reward = self.REWARD_CONST if np.random.rand() < 0.75 else -1 * self.REWARD_CONST
+            rewards = torch.FloatTensor([reward])
 
             # Calculate loss
             loss = torch.sum(torch.mul(model_out, rewards).mul(-1), -1)
@@ -49,20 +51,12 @@ class TrainV0(object):
             loss.backward()
             self.optimizer.step()
 
-            if i % 100 == 0:
+            if i % loops == 0:
                 with torch.no_grad():
-                    out = self.make_img(self.model(noise))
+                    out = self.make_img(self.model(self.static_noise))
                 ims.append(out)
 
-        w = h = 10
-        columns = 2
-        rows = 5
-        fig = plt.figure(figsize=(8,8))
-        for i in range(1,columns*rows + 1):
-            ax = fig.add_subplot(rows, columns, i)
-            ax.set_title(f'{i * 100}')
-            plt.imshow(ims[i - 1])
-        plt.show()
+        self.plot_samples(ims)
 
     def gen_img(self, noise=None):
         if not noise: noise = torch.randn(1, 16)
@@ -71,14 +65,17 @@ class TrainV0(object):
         img = self.make_img(out)
         return img
 
-    def plot_samples(self, noise=None):
-        w = h = 10
-        columns = rows = 4
-        fig = plt.figure(figsize=(8, 8))
-        for i in range(1, columns*rows +1):
-            img = self.gen_img(noise)
-            fig.add_subplot(rows, columns, i)
+    def plot_samples(self, ims, noise=None):
+        h = 2
+        w = math.ceil(len(ims) / 2)
+        fig = plt.figure(figsize=(6, 6))
+        i = 1
+        for img in ims:
+            ax = fig.add_subplot(h, w, i)
+            ax.axis('off')
+            ax.set_title(f'{i}')
             plt.imshow(img)
+            i += 1
         plt.show()
 
 
@@ -89,5 +86,4 @@ if __name__ == '__main__':
     mdl = Imggen(in_features=16, width=16, height=16)
     tr = TrainV0(mdl, device=device)
     tr.train()
-    tr.plot_samples()
 
